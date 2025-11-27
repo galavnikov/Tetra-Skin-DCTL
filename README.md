@@ -1,5 +1,5 @@
 # Tetra_Skin v1.0 README
-Based on the famous tetra DCTL https://github.com/npeason/Tetra-DCTLOFX, I have developed a new version for skin tones.
+Based on the famous Tetra DCTL https://github.com/npeason/Tetra-DCTLOFX, I have developed a new version for skin tones.
 
 The recent modifications focus on streamlining the interface and enhancing the precision of skin tone manipulation:
 
