@@ -1,0 +1,110 @@
+//Tetra_Skin / version 1.0 / Tetra Skin Modifier
+//Created by Galavnikov @ lakravana.com
+
+// --- CONTROLES DE COLOR DE PIEL ---
+// Se conservan solo los vectores que afectan a la piel (Rojo, Amarillo, Magenta, Blanco)
+// Referencia lógica original 
+
+DEFINE_UI_PARAMS(r_R, Red-Red, DCTLUI_SLIDER_FLOAT, 0.0f, -1.0f, 1.0f, 0.001f)
+DEFINE_UI_PARAMS(r_G, Red-Green, DCTLUI_SLIDER_FLOAT, 0.0f, -1.0f, 1.0f, 0.001f)
+DEFINE_UI_PARAMS(r_B, Red-Blue, DCTLUI_SLIDER_FLOAT, 0.0f, -1.0f, 1.0f, 0.001f)
+
+DEFINE_UI_PARAMS(y_R, Yel-Red, DCTLUI_SLIDER_FLOAT, 0.0f, -1.0f, 1.0f, 0.001f)
+DEFINE_UI_PARAMS(y_G, Yel-Green, DCTLUI_SLIDER_FLOAT, 0.0f, -1.0f, 1.0f, 0.001f)
+DEFINE_UI_PARAMS(y_B, Yel-Blue, DCTLUI_SLIDER_FLOAT, 0.0f, -1.0f, 1.0f, 0.001f)
+
+DEFINE_UI_PARAMS(m_R, Mag-Red, DCTLUI_SLIDER_FLOAT, 0.0f, -1.0f, 1.0f, 0.001f)
+DEFINE_UI_PARAMS(m_G, Mag-Green, DCTLUI_SLIDER_FLOAT, 0.0f, -1.0f, 1.0f, 0.001f)
+DEFINE_UI_PARAMS(m_B, Mag-Blue, DCTLUI_SLIDER_FLOAT, 0.0f, -1.0f, 1.0f, 0.001f)
+
+DEFINE_UI_PARAMS(w_R, Wht-Red, DCTLUI_SLIDER_FLOAT, 0.0f, -1.0f, 1.0f, 0.001f)
+DEFINE_UI_PARAMS(w_G, Wht-Green, DCTLUI_SLIDER_FLOAT, 0.0f, -1.0f, 1.0f, 0.001f)
+DEFINE_UI_PARAMS(w_B, Wht-Blue, DCTLUI_SLIDER_FLOAT, 0.0f, -1.0f, 1.0f, 0.001f)
+
+// --- CONTROLES DE LA MÁSCARA (KEYER) ---
+DEFINE_UI_PARAMS(show_mask, Show Mask, DCTLUI_CHECK_BOX, 0)
+DEFINE_UI_PARAMS(sk_hue, Skin Hue Center, DCTLUI_SLIDER_FLOAT, 0.08f, 0.0f, 1.0f, 0.01f)
+DEFINE_UI_PARAMS(sk_width, Skin Hue Width, DCTLUI_SLIDER_FLOAT, 0.15f, 0.0f, 1.0f, 0.01f)
+DEFINE_UI_PARAMS(sk_sat, Min Saturation, DCTLUI_SLIDER_FLOAT, 0.05f, 0.0f, 1.0f, 0.01f)
+
+// Función auxiliar para convertir RGB a HSL (para la máscara)
+// Usamos .x .y .z en lugar de .r .g .b para compatibilidad
+__DEVICE__ float3 rgb2hsl(float3 c) {
+    float4 K = make_float4(0.0f, -1.0f / 3.0f, 2.0f / 3.0f, -1.0f);
+    
+    // c.x=Red, c.y=Green, c.z=Blue
+    float4 p = c.y < c.z ? make_float4(c.z, c.y, K.w, K.z) : make_float4(c.y, c.z, K.x, K.y);
+    float4 q = c.x < p.x ? make_float4(p.x, c.x, p.y, p.z) : make_float4(c.x, p.x, p.y, p.x);
+
+    float d = q.x - _fminf(q.w, q.y);
+    float e = 1.0e-10f;
+    return make_float3(_fabs(q.z + (q.w - q.y) / (6.0f * d + e)), d / (q.x + e), q.x);
+}
+
+__DEVICE__ float3 transform(int p_Width, int p_Height, int p_X, int p_Y, float p_R, float p_G, float p_B)
+{
+    // 1. Definir los vectores de color
+    float3 red = make_float3(r_R + 1.f, r_G, r_B); 
+    float3 yel = make_float3(y_R + 1.f, y_G + 1.f, y_B);
+    float3 mag = make_float3(m_R + 1.f, m_G, m_B + 1.f);
+    float3 wht = make_float3(w_R + 1.f, w_G + 1.f, w_B + 1.f);
+    
+    // Vectores neutrales
+    float3 grn = make_float3(0.0f, 1.0f, 0.0f);
+    float3 blu = make_float3(0.0f, 0.0f, 1.0f);
+    float3 cyn = make_float3(0.0f, 1.0f, 1.0f);
+
+    float3 inputColor = make_float3(p_R, p_G, p_B);
+    float3 tetraColor;
+
+    // 2. Aplicar interpolación Tetraédrica
+    if (p_R > p_G) {
+        if (p_G > p_B){
+            // Sector Rojo-Amarillo
+            tetraColor = p_R * red + p_G * (yel - red) + p_B * (wht - yel);
+        }
+        else if (p_R > p_B){
+            // Sector Rojo-Magenta
+            tetraColor = p_R * red + p_G * (wht - mag) + p_B * (mag - red);
+        }
+        else{
+            tetraColor = p_R * (mag - blu) + p_G * (wht - mag) + p_B * blu;
+        }
+    } else {      
+        if (p_B > p_G){
+            tetraColor = p_R * (wht - cyn) + p_G * (cyn - blu) + p_B * blu;
+        }
+        else if (p_B > p_R){
+            tetraColor = p_R * (wht - cyn) + p_G * grn + p_B * (cyn - grn);
+        }
+        else{
+            tetraColor = p_R * (yel - grn) + p_G * grn + p_B * (wht - yel);
+        }
+    }
+
+    // 3. Generar Máscara de Piel
+    float3 hsl = rgb2hsl(inputColor);
+    float hue = hsl.x;
+    float sat = hsl.y;
+    
+    // Distancia del tono
+    float hueDist = _fabs(hue - sk_hue);
+    if (hueDist > 0.5f) hueDist = 1.0f - hueDist; 
+    
+    // Crear máscara
+    float mask = 1.0f - _fminf(1.0f, hueDist / (sk_width * 0.5f));
+    
+    // Limpiar máscara por saturación
+    if (sat < sk_sat) mask = 0.0f;
+    float sat_mask = _fminf(1.0f, (sat - sk_sat) * 10.0f); 
+    mask *= sat_mask;
+
+    mask = _fmaxf(0.0f, _fminf(1.0f, mask));
+
+    // 4. Salida
+    if (show_mask == 1) {
+        return make_float3(mask, mask, mask);
+    } else {
+        return lerp(inputColor, tetraColor, mask);
+    }
+}
