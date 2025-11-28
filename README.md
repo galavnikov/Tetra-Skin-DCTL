@@ -8,3 +8,5 @@ Control Isolation: Only the parameters for the Red, Yellow, Magenta, and White v
 Tetrahedral Logic: The exact tetrahedral interpolation mathematics from the original file was retained. This ensures the continued delivery of the same smooth and organic color processing quality.
 
 Skin Keyer (Qualification): A "Qualification" section was added at the beginning. The script now internally generates a mask based on Hue and Saturation. This crucial addition ensures that while the sliders are moved, the effect is applied only to the skin and does not impact other red or yellow objects in the background (such as a wall or a car).
+
+More information: https://lakravana.com/tetra-skin/
