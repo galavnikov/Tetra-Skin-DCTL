@@ -3,7 +3,6 @@
 
 // --- CONTROLES DE COLOR DE PIEL ---
 // Se conservan solo los vectores que afectan a la piel (Rojo, Amarillo, Magenta, Blanco)
-// Referencia lógica original 
 
 DEFINE_UI_PARAMS(r_R, Red-Red, DCTLUI_SLIDER_FLOAT, 0.0f, -1.0f, 1.0f, 0.001f)
 DEFINE_UI_PARAMS(r_G, Red-Green, DCTLUI_SLIDER_FLOAT, 0.0f, -1.0f, 1.0f, 0.001f)
@@ -109,3 +108,4 @@ __DEVICE__ float3 transform(int p_Width, int p_Height, int p_X, int p_Y, float p
     }
 
 }
+
